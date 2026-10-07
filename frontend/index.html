@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoL Draft Predictor</title>
+    <!-- Importation d'une police moderne depuis Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Lien vers ton nouveau fichier CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Draft Analyzer</h1>
+            <p>Propulsé par Scikit-learn & FastAPI</p>
+        </header>
+
+        <div class="controls-card">
+            <div class="input-group">
+                <label for="champion">Champion</label>
+                <select id="champion">
+                    <option value="Singed">Singed</option>
+                    <option value="Viktor">Viktor</option>
+                    <option value="Jinx">Jinx</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label for="position">Rôle</label>
+                <select id="position">
+                    <option value="TOP">Toplane</option>
+                    <option value="MIDDLE">Midlane</option>
+                    <option value="BOTTOM">ADC</option>
+                </select>
+            </div>
+
+            <button id="predict-btn">Analyser la composition</button>
+        </div>
+
+        <div id="result-container" class="hidden">
+            <h2 id="result-text">--%</h2>
+            <p id="result-message">En attente de l'IA...</p>
+        </div>
+    </div>
+
+    <!-- Lien vers ton nouveau fichier Javascript -->
+    <script src="script.js"></script>
+</body>
+</html>

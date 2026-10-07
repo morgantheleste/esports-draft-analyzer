@@ -1,0 +1,17 @@
+# Sécurité (Clés API)
+.env
+
+# Environnements Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Bases de données et gros fichiers
+data/*.db
+data/*.sqlite
+.DS_Store
+
+# (Optionnel) On peut versionner les petits modèles XGBoost (.joblib) pour que 
+# le site marche direct, mais on ignore les dossiers de logs MLflow si on en a
+mlruns/
