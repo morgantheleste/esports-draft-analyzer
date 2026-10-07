@@ -5,108 +5,125 @@ import pandas as pd
 import sqlite3
 from dotenv import load_dotenv
 
-# 1. Configuration et Sécurité
 load_dotenv()
 API_KEY = os.getenv("RIOT_API_KEY")
 HEADERS = {"X-Riot-Token": API_KEY}
 
 RIOT_ID = "idjaz"
 TAGLINE = "lzd"
-REGION_EUROPE = "europe" # Utilisé pour le compte et la liste des matchs
-REGION_EUW = "euw1"      # Riot utilise parfois des sous-régions selon les endpoints
+REGION_EUROPE = "europe"
+
+# --- NOUVEAU : DATA DRAGON (Zéro limite d'API) ---
+print("Initialisation du dictionnaire des champions (Data Dragon)...")
+version_url = "https://ddragon.leagueoflegends.com/api/versions.json"
+latest_version = requests.get(version_url).json()[0]
+champ_url = f"http://ddragon.leagueoflegends.com/cdn/{latest_version}/data/en_US/champion.json"
+champ_data = requests.get(champ_url).json()["data"]
+
+# On crée un dictionnaire { "Singed": ["Fighter", "Tank"], "Viktor": ["Mage"] }
+CHAMP_TAGS = {champ: data["tags"] for champ, data in champ_data.items()}
+# ------------------------------------------------
 
 def get_puuid():
-    """Convertit le Riot ID en PUUID."""
     url = f"https://{REGION_EUROPE}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{RIOT_ID}/{TAGLINE}"
     response = requests.get(url, headers=HEADERS)
-    if response.status_code == 200:
-        return response.json()["puuid"]
-    print(f"Erreur PUUID: {response.status_code}")
+    if response.status_code == 200: return response.json()["puuid"]
     return None
 
 def get_recent_matches(puuid, count=100):
-    """Récupère la liste des derniers identifiants de matchs."""
-    # Riot limite cette requête à 100 matchs maximum d'un coup
     count = min(count, 100)
-        
     url = f"https://{REGION_EUROPE}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?start=0&count={count}"
     response = requests.get(url, headers=HEADERS)
     
-    # Si Riot nous bloque dès cette étape, on attend !
     if response.status_code == 429:
-        print("Limite API atteinte pour lister les matchs, pause de 10s...")
+        print("Pause de 10s (Rate Limit)...")
         time.sleep(10)
         return get_recent_matches(puuid, count)
         
-    if response.status_code == 200:
-        return response.json()
-        
-    print(f"Erreur liste matchs: {response.status_code}")
+    if response.status_code == 200: return response.json()
     return []
 
+def count_team_stats(team_participants):
+    """Compte le nombre de rôles clés dans une équipe."""
+    tanks = 0
+    mages = 0
+    for p in team_participants:
+        tags = CHAMP_TAGS.get(p["championName"], [])
+        if "Tank" in tags: tanks += 1
+        if "Mage" in tags: mages += 1
+    return tanks, mages
+
 def get_match_details(match_id):
-    """Récupère les détails d'un match et extrait les stats des 10 joueurs."""
     url = f"https://{REGION_EUROPE}.api.riotgames.com/lol/match/v5/matches/{match_id}"
     response = requests.get(url, headers=HEADERS)
     
     if response.status_code == 429:
-        print("Limite API atteinte, pause de 10s...")
+        print("Pause de 10s (Rate Limit)...")
         time.sleep(10)
         return get_match_details(match_id)
         
-    if response.status_code != 200:
-        print(f"Erreur détails match {match_id}: {response.status_code}")
-        return None
+    if response.status_code != 200: return None
 
-    data = response.json()
-    participants = data["info"]["participants"]
+    participants = response.json()["info"]["participants"]
     match_data = []
     
+    # Séparation des équipes et analyse globale de la composition
+    team_100 = [p for p in participants if p["teamId"] == 100]
+    team_200 = [p for p in participants if p["teamId"] == 200]
+    
+    tanks_100, mages_100 = count_team_stats(team_100)
+    tanks_200, mages_200 = count_team_stats(team_200)
+
+    # Mapping des positions pour les matchups
+    opponents = {100: {}, 200: {}}
+    for p in participants:
+        if p["teamPosition"]: opponents[p["teamId"]][p["teamPosition"]] = p["championName"]
+
     for player in participants:
-        match_data.append({
-            "match_id": match_id,
-            "team_id": player["teamId"],
-            "champion_name": player["championName"],
-            "position": player["teamPosition"],
-            "win": player["win"]
-        })
+        pos = player["teamPosition"]
+        my_team = player["teamId"]
+        enemy_team = 200 if my_team == 100 else 100
+        
+        enemy_champ = opponents[enemy_team].get(pos, "Unknown")
+        
+        # Attribution des stats globales (Niveau 2)
+        ally_tanks, ally_mages = (tanks_100, mages_100) if my_team == 100 else (tanks_200, mages_200)
+        enemy_tanks, enemy_mages = (tanks_200, mages_200) if my_team == 100 else (tanks_100, mages_100)
+
+        if pos and enemy_champ != "Unknown":
+            match_data.append({
+                "match_id": match_id,
+                "champion_name": player["championName"],
+                "enemy_champion": enemy_champ,
+                "position": pos,
+                "ally_tanks": ally_tanks,     # NOUVEAU
+                "enemy_tanks": enemy_tanks,   # NOUVEAU
+                "ally_mages": ally_mages,     # NOUVEAU
+                "enemy_mages": enemy_mages,   # NOUVEAU
+                "win": player["win"]
+            })
     return match_data
 
 if __name__ == "__main__":
-    print(f"Démarrage du pipeline pour {RIOT_ID}#{TAGLINE}...")
-    
-    # Étape A : Trouver le PUUID
+    print(f"Démarrage du pipeline V2 pour {RIOT_ID}#{TAGLINE}...")
     puuid = get_puuid()
-    if not puuid:
-        exit("Impossible de trouver le compte.")
-        
-    # Étape B : Lister les matchs
-    match_ids = get_recent_matches(puuid, count=200) # On prend 200 matchs pour avoir un dataset plus conséquent
-    print(f"{len(match_ids)} matchs trouvés. Début de l'extraction...")
+    if not puuid: exit()
     
-    # Étape C : Extraire les détails
+    match_ids = get_recent_matches(puuid, count=100)
     all_matches_data = []
+    
     for match_id in match_ids:
-        print(f"Extraction des données pour {match_id}...")
+        print(f"Extraction du match {match_id}...")
         details = get_match_details(match_id)
-        if details:
-            all_matches_data.extend(details)
-        time.sleep(1.2) # Rate limiting de sécurité (max 20 requêtes/sec et 100/2min chez Riot)
+        if details: all_matches_data.extend(details)
+        time.sleep(1.2)
 
     if all_matches_data:
-        # Étape D : Sauvegarde SQL via Pandas
         df = pd.DataFrame(all_matches_data)
-        os.makedirs("../data", exist_ok=True)
-        # Attention au chemin si tu lances le script depuis le dossier src ou la racine
-        # On va le forcer dans un dossier data à la racine du projet
         db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "matches.db")
-        os.makedirs(os.path.dirname(db_path), exist_ok=True)
-        
         conn = sqlite3.connect(db_path)
-        df.to_sql("match_participants", conn, if_exists="append", index=False)
+        # On remplace la table entière pour éviter les conflits de colonnes
+        df.to_sql("match_participants", conn, if_exists="replace", index=False)
         conn.close()
-        
-        print("\nPipeline terminé ! Les données sont dans data/matches.db")
+        print("\nExtraction réussie ! Les stats globales d'équipes ont été ajoutées.")
         print(df.head())
-    else:
-        print("Aucune donnée extraite.")
