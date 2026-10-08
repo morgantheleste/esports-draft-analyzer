@@ -30,28 +30,39 @@ def get_puuid():
     if response.status_code == 200: return response.json()["puuid"]
     return None
 
-def get_recent_matches(puuid, count=100):
-    count = min(count, 100)
-    url = f"https://{REGION_EUROPE}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?start=0&count={count}"
-    response = requests.get(url, headers=HEADERS)
-    
-    if response.status_code == 429:
-        print("Pause de 10s (Rate Limit)...")
-        time.sleep(10)
-        return get_recent_matches(puuid, count)
+def get_recent_matches(puuid, total_count=1000):
+    all_match_ids = []
+    start = 0
+    while start < total_count:
+        url = f"https://{REGION_EUROPE}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?start={start}&count=100"
+        response = requests.get(url, headers=HEADERS)
         
-    if response.status_code == 200: return response.json()
-    return []
+        if response.status_code == 429:
+            print(f"Pause de 10s (Rate Limit Riot) à start={start}...")
+            time.sleep(10)
+            continue
+            
+        if response.status_code == 200:
+            batch = response.json()
+            if not batch: break
+            all_match_ids.extend(batch)
+            start += 100
+        else:
+            break
+    return all_match_ids[:total_count]
 
 def count_team_stats(team_participants):
-    """Compte le nombre de rôles clés dans une équipe."""
-    tanks = 0
-    mages = 0
+    """Compte le nombre de chaque classe dans une équipe."""
+    stats = {"tanks": 0, "mages": 0, "assassins": 0, "fighters": 0, "marksmen": 0, "supports": 0}
     for p in team_participants:
         tags = CHAMP_TAGS.get(p["championName"], [])
-        if "Tank" in tags: tanks += 1
-        if "Mage" in tags: mages += 1
-    return tanks, mages
+        if "Tank" in tags: stats["tanks"] += 1
+        if "Mage" in tags: stats["mages"] += 1
+        if "Assassin" in tags: stats["assassins"] += 1
+        if "Fighter" in tags: stats["fighters"] += 1
+        if "Marksman" in tags: stats["marksmen"] += 1
+        if "Support" in tags: stats["supports"] += 1
+    return stats
 
 def get_match_details(match_id):
     url = f"https://{REGION_EUROPE}.api.riotgames.com/lol/match/v5/matches/{match_id}"
@@ -71,8 +82,8 @@ def get_match_details(match_id):
     team_100 = [p for p in participants if p["teamId"] == 100]
     team_200 = [p for p in participants if p["teamId"] == 200]
     
-    tanks_100, mages_100 = count_team_stats(team_100)
-    tanks_200, mages_200 = count_team_stats(team_200)
+    stats_100 = count_team_stats(team_100)
+    stats_200 = count_team_stats(team_200)
 
     # Mapping des positions pour les matchups
     opponents = {100: {}, 200: {}}
@@ -86,9 +97,9 @@ def get_match_details(match_id):
         
         enemy_champ = opponents[enemy_team].get(pos, "Unknown")
         
-        # Attribution des stats globales (Niveau 2)
-        ally_tanks, ally_mages = (tanks_100, mages_100) if my_team == 100 else (tanks_200, mages_200)
-        enemy_tanks, enemy_mages = (tanks_200, mages_200) if my_team == 100 else (tanks_100, mages_100)
+        # Attribution des stats globales
+        ally_stats = stats_100 if my_team == 100 else stats_200
+        enemy_stats = stats_200 if my_team == 100 else stats_100
 
         if pos and enemy_champ != "Unknown":
             match_data.append({
@@ -96,24 +107,35 @@ def get_match_details(match_id):
                 "champion_name": player["championName"],
                 "enemy_champion": enemy_champ,
                 "position": pos,
-                "ally_tanks": ally_tanks,     # NOUVEAU
-                "enemy_tanks": enemy_tanks,   # NOUVEAU
-                "ally_mages": ally_mages,     # NOUVEAU
-                "enemy_mages": enemy_mages,   # NOUVEAU
+                "ally_tanks": ally_stats["tanks"],
+                "enemy_tanks": enemy_stats["tanks"],
+                "ally_mages": ally_stats["mages"],
+                "enemy_mages": enemy_stats["mages"],
+                "ally_assassins": ally_stats["assassins"],
+                "enemy_assassins": enemy_stats["assassins"],
+                "ally_fighters": ally_stats["fighters"],
+                "enemy_fighters": enemy_stats["fighters"],
+                "ally_marksmen": ally_stats["marksmen"],
+                "enemy_marksmen": enemy_stats["marksmen"],
+                "ally_supports": ally_stats["supports"],
+                "enemy_supports": enemy_stats["supports"],
                 "win": player["win"]
             })
     return match_data
 
 if __name__ == "__main__":
-    print(f"Démarrage du pipeline V2 pour {RIOT_ID}#{TAGLINE}...")
+    print(f"Démarrage du pipeline V3 (Scraping Massif) pour {RIOT_ID}#{TAGLINE}...")
     puuid = get_puuid()
     if not puuid: exit()
     
-    match_ids = get_recent_matches(puuid, count=100)
+    print("Récupération des identifiants de matchs...")
+    match_ids = get_recent_matches(puuid, total_count=1000)
+    print(f"{len(match_ids)} matchs trouvés à analyser.")
+    
     all_matches_data = []
     
-    for match_id in match_ids:
-        print(f"Extraction du match {match_id}...")
+    for idx, match_id in enumerate(match_ids):
+        print(f"Extraction du match {idx+1}/{len(match_ids)} ({match_id})...")
         details = get_match_details(match_id)
         if details: all_matches_data.extend(details)
         time.sleep(1.2)

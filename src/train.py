@@ -23,8 +23,14 @@ y = df["win"].astype(int)
 categorical_cols = ["champion_name", "enemy_champion", "position"]
 X_categorical = pd.get_dummies(df[categorical_cols], dtype=int)
 
-# B. On isole les variables numériques (Déjà prêtes pour le modèle)
-numerical_cols = ["ally_tanks", "enemy_tanks", "ally_mages", "enemy_mages"]
+numerical_cols = [
+    "ally_tanks", "enemy_tanks", 
+    "ally_mages", "enemy_mages",
+    "ally_assassins", "enemy_assassins",
+    "ally_fighters", "enemy_fighters",
+    "ally_marksmen", "enemy_marksmen",
+    "ally_supports", "enemy_supports"
+]
 X_numerical = df[numerical_cols]
 
 # C. On concatène (fusionne) les deux tableaux côte à côte
@@ -35,10 +41,11 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 print("4. Entraînement du modèle XGBoost...")
 model = xgb.XGBClassifier(
-    n_estimators=500,   # On augmente le nombre de tentatives (arbres)
-    learning_rate=0.1,  # On le rend plus réactif
-    max_depth=15,       # Des arbres TRES profonds pour creuser jusqu'aux noms des champions 
-    min_child_weight=1, # CRUCIAL : l'autorise à retenir un matchup vu 1 seule fois
+    n_estimators=100,     # Moins d'arbres pour éviter d'apprendre par cœur
+    learning_rate=0.05,   # Apprentissage plus doux
+    max_depth=4,          # Arbres très peu profonds (on cherche des tendances générales)
+    min_child_weight=5,   # Faut au moins 5 cas similaires pour valider une règle
+    reg_lambda=1.5,       # Régularisation L2 pour empêcher les probabilités extrêmes (ex: 99.9%)
     random_state=42     
 )
 model.fit(X_train, y_train)

@@ -1,51 +1,248 @@
-/* Reset de base */
+/* ============================================================================
+   STYLE.CSS — Feuille de style principale du Draft Analyzer
+   ============================================================================
+   Design : NEUMORPHISME (Soft UI)
+   
+   Le neumorphisme c'est un style visuel basé sur des ombres douces
+   (une claire, une foncée) sur un fond uni. Ça donne un effet de
+   relief comme si les éléments étaient moulés dans la surface.
+   
+   Pas de dégradés tape-à-l'œil, pas de fond animé, juste des ombres
+   subtiles et un rendu premium/sobre.
+   
+   Sommaire :
+     1. Variables CSS (couleurs, ombres neumorphiques)
+     2. Reset global + choix de la police
+     3. Body + conteneur principal
+     4. Header (titre + badge)
+     5. Carte du formulaire (controls-card)
+     6. Titres de section
+     7. Champs de saisie (inputs, select)
+     8. Champions en VS
+     9. Compteurs (tanks/mages)
+    10. Bouton principal
+    11. Carte de résultat
+    12. Barre de progression
+    13. Footer
+    14. Animations
+    15. Responsive
+   ============================================================================ */
+
+
+/* ==========================================================================
+   1. VARIABLES CSS — Le système de design neumorphique
+   ==========================================================================
+   Tout le style neumorphique repose sur UNE couleur de fond et DEUX ombres :
+     - Une ombre foncée (en bas à droite) → donne l'impression de profondeur
+     - Une ombre claire (en haut à gauche) → simule la lumière qui frappe
+   
+   C'est la combinaison des deux qui crée l'illusion de relief.
+*/
+:root {
+    /* La couleur de base — tout le design tourne autour de cette teinte */
+    --bg-base: #2a2d3a;             /* Gris bleuté foncé, sobre et élégant */
+    --bg-surface: #2a2d3a;          /* Même couleur pour les cartes (c'est le principe du neumorphisme) */
+    --bg-inset: #252836;            /* Un poil plus foncé pour les champs "enfoncés" */
+    
+    /* Texte */
+    --text-primary: #e2e4ed;        /* Texte principal, blanc cassé */
+    --text-secondary: #9a9cb5;      /* Texte secondaire, gris lavande */
+    --text-muted: #6b6d84;          /* Texte discret */
+    
+    /* Couleur d'accent — sobre, pas criard */
+    --accent: #7c8adb;              /* Bleu lavande doux, assez discret */
+    --accent-soft: rgba(124, 138, 219, 0.15);  /* Version très transparente pour les fonds */
+    
+    /* Couleurs de feedback */
+    --victory-green: #6bcb8b;       /* Vert doux (pas fluo) */
+    --defeat-red: #e07070;          /* Rouge doux (pas agressif) */
+    
+    /* ===== LES OMBRES NEUMORPHIQUES ===== */
+    /* C'est LE cœur du design. Deux ombres opposées créent le relief. */
+    
+    /* Ombre "en relief" — l'élément semble sortir de la surface */
+    --shadow-raised:
+        6px 6px 14px rgba(0, 0, 0, 0.35),       /* Ombre foncée en bas-droite */
+        -6px -6px 14px rgba(255, 255, 255, 0.04); /* Lueur claire en haut-gauche */
+    
+    /* Ombre "enfoncée" — l'élément semble creusé dans la surface */
+    --shadow-inset:
+        inset 4px 4px 8px rgba(0, 0, 0, 0.3),          /* Ombre interne bas-droite */
+        inset -4px -4px 8px rgba(255, 255, 255, 0.03);  /* Lueur interne haut-gauche */
+    
+    /* Ombre douce pour les éléments moyens (boutons, badges) */
+    --shadow-soft:
+        4px 4px 10px rgba(0, 0, 0, 0.3),
+        -4px -4px 10px rgba(255, 255, 255, 0.03);
+    
+    /* Coins arrondis — un peu plus ronds que d'habitude, c'est la norme neumorphique */
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 22px;
+}
+
+
+/* ==========================================================================
+   2. RESET GLOBAL + POLICE
+   ==========================================================================
+   ╔══════════════════════════════════════════════════════════════════════╗
+   ║  POUR CHANGER LA POLICE DU SITE, C'EST ICI !                      ║
+   ║                                                                    ║
+   ║  → Remplacer 'Outfit' par le nom de la police voulue.             ║
+   ║  → Ne pas oublier de aussi changer le <link> dans index.html      ║
+   ║    (dans le <head>) pour charger la bonne police Google Fonts.    ║
+   ║                                                                    ║
+   ║  Exemples : 'Inter', 'Roboto', 'Montserrat', 'Poppins', etc.     ║
+   ╚══════════════════════════════════════════════════════════════════════╝
+*/
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Poppins', sans-serif;
+    /* ↓↓↓ C'EST ICI QUE JE CHANGE LA POLICE ↓↓↓ */
+    font-family: 'Outfit', "Nunito";
+    
+    /* ↑↑↑ C'EST ICI QUE JE CHANGE LA POLICE ↑↑↑ */
 }
 
+
+/* ==========================================================================
+   3. BODY + CONTENEUR PRINCIPAL
+   ==========================================================================
+   Le fond est UNI et sobre. Pas de dégradé, pas de particules.
+   C'est la base du neumorphisme : une surface plate et homogène.
+*/
 body {
-    background-color: #0f172a; /* Bleu très foncé, style gaming */
-    color: #f8fafc;
+    background: var(--bg-base);
+    color: var(--text-primary);
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    padding: 24px;
 }
 
 .container {
     width: 100%;
-    max-width: 500px;
-    padding: 20px;
+    max-width: 540px;
 }
 
+
+/* ==========================================================================
+   4. HEADER — Titre sobre, sans dégradé
+   ==========================================================================
+   Le titre est en blanc cassé, simple et lisible.
+   Pas de gradient, pas d'effet tape-à-l'œil — juste de la typo propre.
+*/
 header {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 36px;
 }
 
+/* Le petit badge au-dessus du titre */
+.badge {
+    display: inline-block;
+    padding: 7px 18px;
+    background: var(--bg-surface);
+    border: none;
+    border-radius: 50px;
+    font-size: 0.78rem;
+    font-weight: 400;
+    color: var(--accent);
+    margin-bottom: 18px;
+    letter-spacing: 0.5px;
+    /* Neumorphisme : le badge "sort" de la surface */
+    box-shadow: var(--shadow-soft);
+}
+
+/* Le titre principal — sobre, pas de dégradé */
 header h1 {
-    font-size: 2.5rem;
-    background: linear-gradient(to right, #3b82f6, #8b5cf6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    font-size: 2.6rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.5px;
+    line-height: 1.15;
 }
 
-header p {
-    color: #94a3b8;
-    font-size: 0.9rem;
-    margin-top: 5px;
+/* Le mot "Analyzer" — même couleur, je le distingue juste par son poids */
+header h1 span {
+    color: var(--accent);      /* Accent doux, pas un dégradé */
+    font-weight: 800;
 }
 
+/* Le sous-titre */
+.subtitle {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-top: 10px;
+    font-weight: 300;
+}
+
+
+/* ==========================================================================
+   5. CARTE DU FORMULAIRE (controls-card)
+   ==========================================================================
+   La carte principale en neumorphisme : elle a l'air de sortir de la page
+   grâce aux deux ombres (foncée + claire) sans bordure visible.
+*/
 .controls-card {
-    background-color: #1e293b;
-    padding: 30px;
-    border-radius: 16px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    background: var(--bg-surface);
+    padding: 36px;
+    border-radius: var(--radius-lg);
+    border: none;              /* Pas de bordure, les ombres suffisent */
+    /* L'ombre neumorphique qui donne le relief */
+    box-shadow: var(--shadow-raised);
 }
 
+
+/* ==========================================================================
+   6. TITRES DE SECTION (dans la carte)
+   ==========================================================================
+   Les petits titres "⚔️ Matchup", "🗺️ Position", etc.
+*/
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 18px;
+    margin-top: 28px;
+    padding-bottom: 12px;
+    /* Ligne de séparation très subtile en dessous */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.section-title:first-child {
+    margin-top: 0;
+}
+
+.section-icon-img {
+    width: 22px;
+    height: 22px;
+    opacity: 0.85;
+    /* Un léger filtre pour que ça s'intègre mieux si les icônes sont trop vives */
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.1));
+}
+
+.label-icon {
+    width: 16px;
+    height: 16px;
+    vertical-align: text-bottom;
+    margin-right: 6px;
+    opacity: 0.8;
+}
+
+
+/* ==========================================================================
+   7. CHAMPS DE SAISIE — Inputs et Select
+   ==========================================================================
+   Les champs sont "enfoncés" dans la surface grâce à l'ombre interne
+   (inset shadow). C'est le contraire de la carte qui, elle, est en relief.
+*/
 .input-group {
     display: flex;
     flex-direction: column;
@@ -53,68 +250,475 @@ header p {
 }
 
 .input-group label {
-    margin-bottom: 8px;
+    margin-bottom: 7px;
     font-weight: 600;
-    color: #cbd5e1;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    letter-spacing: 0.3px;
 }
 
-select {
-    padding: 12px;
-    background-color: #0f172a;
-    color: white;
-    border: 1px solid #334155;
-    border-radius: 8px;
-    font-size: 1rem;
-    outline: none;
-    transition: border-color 0.3s ease;
+.input-wrapper,
+.select-wrapper {
+    position: relative;
 }
 
-select:focus {
-    border-color: #3b82f6;
-}
-
-button {
+/* Style des inputs texte et du select — effet "creusé" */
+.input-wrapper input,
+.select-wrapper select {
     width: 100%;
-    padding: 15px;
-    background: linear-gradient(to right, #2563eb, #4f46e5);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 1.1rem;
-    font-weight: bold;
+    padding: 13px 16px;
+    background: var(--bg-inset);
+    color: var(--text-primary);
+    border: none;                          /* Pas de bordure, c'est l'ombre qui fait tout */
+    border-radius: var(--radius-md);
+    font-size: 0.92rem;
+    font-family: 'Outfit', sans-serif;
+    outline: none;
+    transition: box-shadow 0.3s ease;
+    /* L'ombre "enfoncée" qui donne l'impression que le champ est creusé */
+    box-shadow: var(--shadow-inset);
+}
+
+/* Au focus : on ajoute une lueur d'accent très subtile */
+.input-wrapper input:focus,
+.select-wrapper select:focus {
+    box-shadow:
+        var(--shadow-inset),
+        0 0 0 2px var(--accent-soft);      /* Lueur douce autour du champ */
+}
+
+/* Placeholder */
+.input-wrapper input::placeholder {
+    color: var(--text-muted);
+    font-weight: 300;
+}
+
+/* ==========================================================================
+   SELECT PERSONNALISÉ (AVEC IMAGES DE RÔLES)
+   ==========================================================================
+   Comme un <select> normal ne peut pas afficher d'images de façon fiable,
+   on a créé un menu déroulant sur-mesure (divs) qui respecte le design
+   neumorphique.
+*/
+.custom-select-wrapper {
+    position: relative;
+    user-select: none;
+    width: 100%;
+}
+
+.custom-select-trigger {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 13px 16px;
+    background: var(--bg-inset);
+    color: var(--text-primary);
+    border-radius: var(--radius-md);
+    font-size: 0.92rem;
     cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    margin-top: 10px;
+    box-shadow: var(--shadow-inset);
+    transition: box-shadow 0.3s ease;
 }
 
-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+.custom-select-trigger:hover {
+    /* Lueur d'accent quand on survole le sélecteur */
+    box-shadow: var(--shadow-inset), 0 0 0 2px var(--accent-soft);
 }
 
-/* Styles pour la boîte de résultat */
-#result-container {
-    margin-top: 30px;
-    padding: 20px;
-    border-radius: 12px;
-    text-align: center;
-    transition: all 0.4s ease;
-    opacity: 1;
+.custom-select-value {
+    display: flex;
+    align-items: center;
 }
 
-#result-container.hidden {
+/* La petite flèche vers le bas à droite */
+.custom-select-trigger .arrow {
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid var(--text-secondary);
+    border-bottom: 2px solid var(--text-secondary);
+    transform: rotate(45deg);
+    transition: transform 0.3s ease;
+}
+
+/* Quand le menu est ouvert, la flèche tourne vers le haut */
+.custom-select-wrapper.open .arrow {
+    transform: rotate(-135deg) translate(-2px, -2px);
+}
+
+/* La liste déroulante elle-même */
+.custom-options {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: var(--bg-surface);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-raised); /* En relief par dessus le reste */
+    z-index: 100;
     opacity: 0;
-    transform: translateY(20px);
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.25s ease;
+    overflow: hidden;
 }
 
-#result-text {
-    font-size: 3rem;
+/* Rendre la liste visible quand 'open' est activé */
+.custom-select-wrapper.open .custom-options {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* Chaque option de la liste */
+.custom-option {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    cursor: pointer;
+    font-size: 0.92rem;
+    color: var(--text-primary);
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.custom-option:hover {
+    background: var(--accent-soft);
+}
+
+/* L'option actuellement choisie */
+.custom-option.selected {
+    color: var(--accent);
+    font-weight: 600;
+    background: rgba(124, 138, 219, 0.05);
+}
+
+
+/* ==========================================================================
+   8. CHAMPIONS EN VS
+   ==========================================================================
+   La ligne avec les deux inputs champions et le badge "VS" au milieu.
+*/
+.champions-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.champion-input {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+/* Le badge "VS" — en relief neumorphique, couleur d'accent sobre */
+.vs-badge {
+    padding: 8px 14px;
+    background: var(--bg-surface);
+    border-radius: var(--radius-sm);
     font-weight: 800;
-    margin-bottom: 5px;
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+    color: var(--accent);
+    margin-bottom: 4px;
+    white-space: nowrap;
+    /* En relief, comme un petit bouton */
+    box-shadow: var(--shadow-soft);
 }
 
-.victory { background-color: rgba(34, 197, 94, 0.1); border: 1px solid #22c55e; }
-.victory #result-text { color: #4ade80; }
 
-.defeat { background-color: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; }
-.defeat #result-text { color: #f87171; }
+/* ==========================================================================
+   9. COMPTEURS — Boutons +/- pour tanks et mages
+   ==========================================================================
+*/
+.compo-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.compo-input {
+    flex: 1;
+    margin-bottom: 16px;
+}
+
+/* Le conteneur du compteur — enfoncé comme un input */
+.number-input-wrapper {
+    display: flex;
+    align-items: center;
+    background: var(--bg-inset);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-inset);
+}
+
+/* Le champ number au centre */
+.number-input-wrapper input[type="number"] {
+    flex: 1;
+    text-align: center;
+    padding: 10px 4px;
+    background: transparent;
+    color: var(--text-primary);
+    border: none;
+    font-size: 1.05rem;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    outline: none;
+    -moz-appearance: textfield;
+}
+
+/* Cacher les flèches du input number */
+.number-input-wrapper input[type="number"]::-webkit-outer-spin-button,
+.number-input-wrapper input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Les boutons − et + */
+.number-btn {
+    padding: 10px 16px;
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    cursor: pointer;
+    font-size: 1.05rem;
+    font-weight: 600;
+    transition: color 0.2s ease, background 0.2s ease;
+    user-select: none;
+}
+
+.number-btn:hover {
+    color: var(--accent);
+    background: rgba(124, 138, 219, 0.08);
+}
+
+.number-btn:active {
+    color: var(--accent);
+    transform: scale(0.95);
+}
+
+
+/* ==========================================================================
+   10. BOUTON PRINCIPAL "Analyser le Duel"
+   ==========================================================================
+   Le bouton est en relief neumorphique. Au survol il s'enfonce légèrement
+   (l'ombre passe de raised à un mix plus plat).
+*/
+button#predict-btn {
+    width: 100%;
+    padding: 16px;
+    background: var(--bg-surface);
+    color: var(--accent);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    margin-top: 20px;
+    letter-spacing: 0.5px;
+    /* En relief */
+    box-shadow: var(--shadow-raised);
+    transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+/* Au survol : le bouton "s'enfonce" légèrement */
+button#predict-btn:hover {
+    box-shadow:
+        2px 2px 6px rgba(0, 0, 0, 0.35),
+        -2px -2px 6px rgba(255, 255, 255, 0.04);
+    transform: translateY(1px);
+}
+
+/* Au clic : le bouton est complètement enfoncé */
+button#predict-btn:active {
+    box-shadow: var(--shadow-inset);
+    transform: translateY(0);
+}
+
+.btn-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-loader {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+}
+
+/* Le petit spinner (cercle qui tourne) */
+.spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+/* Classe utilitaire pour cacher un élément */
+.hidden {
+    display: none !important;
+}
+
+
+/* ==========================================================================
+   11. CARTE DE RÉSULTAT — Victoire / Défaite
+   ==========================================================================
+   Même style neumorphique que la carte principale.
+   Elle change de couleur d'accent selon le résultat.
+*/
+.result-card {
+    margin-top: 28px;
+    padding: 28px;
+    border-radius: var(--radius-lg);
+    text-align: center;
+    background: var(--bg-surface);
+    border: none;
+    box-shadow: var(--shadow-raised);
+    
+    /* Animation d'apparition */
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+/* Carte cachée (avant le résultat) */
+.result-card.hidden {
+    display: block !important;
+    opacity: 0;
+    transform: translateY(15px);
+    pointer-events: none;
+}
+
+/* Le gros pourcentage */
+.result-percentage {
+    font-size: 3.2rem;
+    font-weight: 800;
+    margin-bottom: 6px;
+    letter-spacing: -1px;
+    color: var(--text-primary);
+}
+
+/* Le message sous le pourcentage */
+.result-msg {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    font-weight: 300;
+}
+
+/* ===== Thème VICTOIRE ===== */
+.victory .result-percentage {
+    color: var(--victory-green);
+}
+
+.victory .result-msg {
+    color: #93d7a8;
+}
+
+/* ===== Thème DÉFAITE ===== */
+.defeat .result-percentage {
+    color: var(--defeat-red);
+}
+
+.defeat .result-msg {
+    color: #e8a1a1;
+}
+
+
+/* ==========================================================================
+   12. BARRE DE PROGRESSION
+   ==========================================================================
+   Barre horizontale enfoncée dans la surface, la partie remplie
+   utilise la couleur d'accent.
+*/
+.progress-bar-container {
+    width: 100%;
+    height: 8px;
+    background: var(--bg-inset);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 8px;
+    /* La barre est enfoncée */
+    box-shadow: var(--shadow-inset);
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s ease-out, background 0.5s ease;
+    background: var(--accent);
+}
+
+/* Barre verte si victoire */
+.victory .progress-bar {
+    background: var(--victory-green);
+}
+
+/* Barre rouge si défaite */
+.defeat .progress-bar {
+    background: var(--defeat-red);
+}
+
+
+/* ==========================================================================
+   13. FOOTER
+   ==========================================================================
+*/
+footer {
+    text-align: center;
+    margin-top: 36px;
+    padding: 16px;
+}
+
+footer p {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-weight: 300;
+    letter-spacing: 0.3px;
+}
+
+
+/* ==========================================================================
+   14. ANIMATIONS
+   ==========================================================================
+*/
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+
+/* ==========================================================================
+   15. RESPONSIVE — Mobile
+   ==========================================================================
+*/
+@media (max-width: 500px) {
+    header h1 {
+        font-size: 2rem;
+    }
+
+    .champions-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .vs-badge {
+        align-self: center;
+    }
+
+    .controls-card {
+        padding: 22px;
+    }
+
+    .compo-row {
+        gap: 8px;
+    }
+
+    .result-percentage {
+        font-size: 2.6rem;
+    }
+}

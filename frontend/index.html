@@ -3,78 +3,318 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LoL Draft Predictor</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <!-- ===== TITRE ET SEO ===== -->
+    <!-- Le titre qui s'affiche dans l'onglet du navigateur, j'ai mis quelque chose de clair pour le projet -->
+    <title>LoL Draft Predictor — Analyse de Matchup par IA</title>
+    <meta name="description" content="Outil de prédiction de matchup League of Legends basé sur un modèle XGBoost. Projet Data Sciences.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
+
+    <!-- Ma feuille de style principale -->
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
+
+    <!-- ===== CONTENEUR PRINCIPAL ===== -->
+    <!-- Toute l'app est dans ce div, ça me permet de centrer et limiter la largeur facilement -->
     <div class="container">
+
+        <!-- ===== EN-TÊTE / HEADER ===== -->
+        <!-- Le titre principal du site + un petit sous-titre pour expliquer les technos utilisées -->
         <header>
-            <h1>Draft Analyzer</h1>
-            <p>Propulsé par Scikit-learn, XGBoost & FastAPI</p>
+            <!-- Le petit badge au-dessus du titre, juste pour le style -->
+            <h1>Draft <span>Analyzer</span></h1>
+            <p class="subtitle">Prédiction de matchup propulsée par XGBoost, Scikit-learn & FastAPI</p>
         </header>
 
+        <!-- ===== CARTE PRINCIPALE (FORMULAIRE) ===== -->
+        <!--
+            C'est la carte qui contient tous les champs de saisie.
+            L'utilisateur choisit ses champions, le rôle et la compo d'équipe ici.
+            Le tout est envoyé à mon API FastAPI quand il clique sur le bouton.
+        -->
         <div class="controls-card">
-            <!-- 1. Ton Champion -->
-            <div class="input-group">
-                <label for="champion">Ton Champion</label>
-                <input list="champ-list" id="champion" placeholder="Chercher un champion..." autocomplete="off" style="padding: 12px; background-color: #0f172a; color: white; border: 1px solid #334155; border-radius: 8px; font-size: 1rem; width: 100%;">
+
+            <!-- ===== SECTION : SÉLECTION DES CHAMPIONS ===== -->
+            <!--
+                J'ai mis les deux champs champions côte à côte grâce à une flexbox.
+                Le "VS" au milieu c'est juste du style pour faire genre un duel.
+            -->
+            <div class="section-title">
+                <img src="assets/matchup.png" class="section-icon-img" alt="Matchup">
+                <span>Matchup</span>
             </div>
 
-            <!-- 2. Champion Adverse -->
-            <div class="input-group">
-                <label for="enemy_champion">Champion Adverse</label>
-                <input list="champ-list" id="enemy_champion" placeholder="Chercher un champion..." autocomplete="off" style="padding: 12px; background-color: #0f172a; color: white; border: 1px solid #334155; border-radius: 8px; font-size: 1rem; width: 100%;">
+            <div class="champions-row">
+                <!-- Mon champion : champ avec autocomplétion grâce au datalist -->
+                <div class="input-group champion-input">
+                    <label for="champion">Ton Champion</label>
+                    <div class="input-wrapper">
+                        <input list="champ-list" id="champion" placeholder="Ex: Yasuo" autocomplete="off">
+                    </div>
+                </div>
+
+                <!-- Le petit "VS" entre les deux champs, c'est purement visuel -->
+                <div class="vs-badge">VS</div>
+
+                <!-- Le champion ennemi : même logique que le mien -->
+                <div class="input-group champion-input">
+                    <label for="enemy_champion">Champion Adverse</label>
+                    <div class="input-wrapper">
+                        <input list="champ-list" id="enemy_champion" placeholder="Ex: Zed" autocomplete="off">
+                    </div>
+                </div>
             </div>
 
-            <!-- Base de données pour la barre de recherche -->
+            <!--
+                Datalist = la liste de tous les champions pour l'autocomplétion.
+                Elle est remplie dynamiquement par le JavaScript avec l'API Riot (Data Dragon).
+                C'est vide ici, c'est normal, le JS la remplit au chargement de la page.
+            -->
             <datalist id="champ-list"></datalist>
 
-            <!-- 3. Rôle (C'EST CE QUI MANQUAIT !) -->
+            <!-- ===== SECTION : RÔLE / POSITION ===== -->
+            <!--
+                Le rôle c'est la lane du joueur (Top, Jungle, Mid, ADC, Support).
+                C'est un champ obligatoire pour que le modèle IA comprenne le contexte du matchup.
+                Mon API attend la valeur en majuscules (TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY).
+            -->
+            <div class="section-title">
+                <img src="assets/top.png" class="section-icon-img" alt="Position">
+                <span>Position sur la map</span>
+            </div>
+
             <div class="input-group">
                 <label for="position">Rôle</label>
-                <select id="position" style="padding: 12px; background-color: #0f172a; color: white; border: 1px solid #334155; border-radius: 8px; font-size: 1rem; width: 100%;">
+                <!-- On garde le select natif caché pour que le JS puisse lire la valeur facilement -->
+                <select id="position" style="display: none;">
                     <option value="TOP">Toplane</option>
                     <option value="JUNGLE">Jungle</option>
                     <option value="MIDDLE">Midlane</option>
-                    <option value="BOTTOM">ADC</option>
+                    <option value="BOTTOM">ADC (Botlane)</option>
                     <option value="UTILITY">Support</option>
                 </select>
+
+                <!-- Notre select personnalisé (Custom Dropdown) -->
+                <div class="custom-select-wrapper" id="custom-role-select">
+                    <div class="custom-select-trigger">
+                        <!-- Valeur affichée par défaut -->
+                        <span class="custom-select-value">
+                            <img src="assets/top.png" class="label-icon" alt=""> Toplane
+                        </span>
+                        <div class="arrow"></div>
+                    </div>
+                    
+                    <div class="custom-options">
+                        <div class="custom-option selected" data-value="TOP">
+                            <img src="assets/top.png" class="label-icon" alt=""> Toplane
+                        </div>
+                        <div class="custom-option" data-value="JUNGLE">
+                            <img src="assets/jungle.png" class="label-icon" alt=""> Jungle
+                        </div>
+                        <div class="custom-option" data-value="MIDDLE">
+                            <img src="assets/middle.png" class="label-icon" alt=""> Midlane
+                        </div>
+                        <div class="custom-option" data-value="BOTTOM">
+                            <img src="assets/bottom.png" class="label-icon" alt=""> ADC (Botlane)
+                        </div>
+                        <div class="custom-option" data-value="UTILITY">
+                            <img src="assets/utility.png" class="label-icon" alt=""> Support
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- 4. Composition globale -->
-            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <div class="input-group" style="flex: 1; margin-bottom: 0;">
-                    <label>Tanks Alliés</label>
-                    <input type="number" id="ally_tanks" min="0" max="4" value="1" style="padding: 10px; border-radius: 8px; background: #0f172a; color: white; border: 1px solid #334155;">
+            <!-- ===== SECTION : COMPOSITION D'ÉQUIPE ===== -->
+            <!--
+                C'est la partie qui rend mon modèle plus malin que les autres :
+                en plus du 1v1, il prend en compte la composition globale de l'équipe.
+                
+                "Tanks" = personnages résistants (ex: Malphite, Ornn)
+                "Mages" = personnages à dégâts magiques (ex: Lux, Syndra)
+                
+                La somme tanks+mages alliés ne peut pas dépasser 4 (puisque le joueur lui-même
+                occupe déjà 1 place), et l'équipe ennemie ne peut pas dépasser 5.
+                Cette vérification est faite côté JavaScript (validation métier).
+            -->
+            <div class="section-title">
+                <img src="assets/tank.png" class="section-icon-img" alt="Compo">
+                <span>Composition d'équipe</span>
+            </div>
+
+            <!-- Ligne 1 : Les tanks (alliés et ennemis côte à côte) -->
+            <div class="compo-row">
+                <div class="input-group compo-input">
+                    <label for="ally_tanks"><img src="assets/tank.png" class="label-icon"> Tanks Alliés</label>
+                    <div class="number-input-wrapper">
+                        <!-- Les boutons - et + sont gérés en JS pour rendre l'interface plus intuitive -->
+                        <button type="button" class="number-btn minus" data-target="ally_tanks">−</button>
+                        <input type="number" id="ally_tanks" min="0" max="4" value="1" readonly>
+                        <button type="button" class="number-btn plus" data-target="ally_tanks">+</button>
+                    </div>
                 </div>
-                <div class="input-group" style="flex: 1; margin-bottom: 0;">
-                    <label>Tanks Ennemis</label>
-                    <input type="number" id="enemy_tanks" min="0" max="4" value="1" style="padding: 10px; border-radius: 8px; background: #0f172a; color: white; border: 1px solid #334155;">
+                <div class="input-group compo-input">
+                    <label for="enemy_tanks"><img src="assets/tank.png" class="label-icon"> Tanks Ennemis</label>
+                    <div class="number-input-wrapper">
+                        <button type="button" class="number-btn minus" data-target="enemy_tanks">−</button>
+                        <input type="number" id="enemy_tanks" min="0" max="4" value="1" readonly>
+                        <button type="button" class="number-btn plus" data-target="enemy_tanks">+</button>
+                    </div>
                 </div>
             </div>
 
-            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <div class="input-group" style="flex: 1; margin-bottom: 0;">
-                    <label>Mages Alliés</label>
-                    <input type="number" id="ally_mages" min="0" max="4" value="1" style="padding: 10px; border-radius: 8px; background: #0f172a; color: white; border: 1px solid #334155;">
+            <!-- Ligne 2 : Les mages (même logique que les tanks) -->
+            <div class="compo-row">
+                <div class="input-group compo-input">
+                    <label for="ally_mages"><img src="assets/mage.png" class="label-icon"> Mages Alliés</label>
+                    <div class="number-input-wrapper">
+                        <button type="button" class="number-btn minus" data-target="ally_mages">−</button>
+                        <input type="number" id="ally_mages" min="0" max="4" value="1" readonly>
+                        <button type="button" class="number-btn plus" data-target="ally_mages">+</button>
+                    </div>
                 </div>
-                <div class="input-group" style="flex: 1; margin-bottom: 0;">
-                    <label>Mages Ennemis</label>
-                    <input type="number" id="enemy_mages" min="0" max="4" value="1" style="padding: 10px; border-radius: 8px; background: #0f172a; color: white; border: 1px solid #334155;">
+                <div class="input-group compo-input">
+                    <label for="enemy_mages"><img src="assets/mage.png" class="label-icon"> Mages Ennemis</label>
+                    <div class="number-input-wrapper">
+                        <button type="button" class="number-btn minus" data-target="enemy_mages">−</button>
+                        <input type="number" id="enemy_mages" min="0" max="4" value="1" readonly>
+                        <button type="button" class="number-btn plus" data-target="enemy_mages">+</button>
+                    </div>
                 </div>
             </div>
 
-            <!-- 5. Bouton -->
-            <button id="predict-btn">Analyser le Duel</button>
+            <!-- Ligne 3 : Les Assassins -->
+            <div class="compo-row">
+                <div class="input-group compo-input">
+                    <label for="ally_assassins"><img src="assets/assassin.png" class="label-icon"> Assassins Alliés</label>
+                    <div class="number-input-wrapper">
+                        <button type="button" class="number-btn minus" data-target="ally_assassins">−</button>
+                        <input type="number" id="ally_assassins" min="0" max="4" value="0" readonly>
+                        <button type="button" class="number-btn plus" data-target="ally_assassins">+</button>
+                    </div>
+                </div>
+                <div class="input-group compo-input">
+                    <label for="enemy_assassins"><img src="assets/assassin.png" class="label-icon"> Assassins Ennemis</label>
+                    <div class="number-input-wrapper">
+                        <button type="button" class="number-btn minus" data-target="enemy_assassins">−</button>
+                        <input type="number" id="enemy_assassins" min="0" max="4" value="0" readonly>
+                        <button type="button" class="number-btn plus" data-target="enemy_assassins">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ligne 4 : Les Fighters (Combattants) -->
+            <div class="compo-row">
+                <div class="input-group compo-input">
+                    <label for="ally_fighters"><img src="assets/fighter.png" class="label-icon"> Combattants Alliés</label>
+                    <div class="number-input-wrapper">
+                        <button type="button" class="number-btn minus" data-target="ally_fighters">−</button>
+                        <input type="number" id="ally_fighters" min="0" max="4" value="0" readonly>
+                        <button type="button" class="number-btn plus" data-target="ally_fighters">+</button>
+                    </div>
+                </div>
+                <div class="input-group compo-input">
+                    <label for="enemy_fighters"><img src="assets/fighter.png" class="label-icon"> Combattants Ennemis</label>
+                    <div class="number-input-wrapper">
+                        <button type="button" class="number-btn minus" data-target="enemy_fighters">−</button>
+                        <input type="number" id="enemy_fighters" min="0" max="4" value="0" readonly>
+                        <button type="button" class="number-btn plus" data-target="enemy_fighters">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ligne 5 : Les Marksmen (Tireurs/ADC) -->
+            <div class="compo-row">
+                <div class="input-group compo-input">
+                    <label for="ally_marksmen"><img src="assets/marksman.png" class="label-icon"> Tireurs Alliés</label>
+                    <div class="number-input-wrapper">
+                        <button type="button" class="number-btn minus" data-target="ally_marksmen">−</button>
+                        <input type="number" id="ally_marksmen" min="0" max="4" value="0" readonly>
+                        <button type="button" class="number-btn plus" data-target="ally_marksmen">+</button>
+                    </div>
+                </div>
+                <div class="input-group compo-input">
+                    <label for="enemy_marksmen"><img src="assets/marksman.png" class="label-icon"> Tireurs Ennemis</label>
+                    <div class="number-input-wrapper">
+                        <button type="button" class="number-btn minus" data-target="enemy_marksmen">−</button>
+                        <input type="number" id="enemy_marksmen" min="0" max="4" value="0" readonly>
+                        <button type="button" class="number-btn plus" data-target="enemy_marksmen">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ligne 6 : Les Supports -->
+            <div class="compo-row">
+                <div class="input-group compo-input">
+                    <label for="ally_supports"><img src="assets/support.png" class="label-icon"> Supports Alliés</label>
+                    <div class="number-input-wrapper">
+                        <button type="button" class="number-btn minus" data-target="ally_supports">−</button>
+                        <input type="number" id="ally_supports" min="0" max="4" value="0" readonly>
+                        <button type="button" class="number-btn plus" data-target="ally_supports">+</button>
+                    </div>
+                </div>
+                <div class="input-group compo-input">
+                    <label for="enemy_supports"><img src="assets/support.png" class="label-icon"> Supports Ennemis</label>
+                    <div class="number-input-wrapper">
+                        <button type="button" class="number-btn minus" data-target="enemy_supports">−</button>
+                        <input type="number" id="enemy_supports" min="0" max="4" value="0" readonly>
+                        <button type="button" class="number-btn plus" data-target="enemy_supports">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== BOUTON D'ANALYSE ===== -->
+            <!--
+                Quand on clique ici, le JavaScript récupère toutes les valeurs du formulaire,
+                les envoie à mon API FastAPI (POST /predict), et affiche le résultat en dessous.
+                Le petit loader apparaît pendant que l'IA calcule.
+            -->
+            <button id="predict-btn">
+                <span class="btn-text">Analyser le Duel</span>
+                <span class="btn-loader hidden">
+                    <!-- Le spinner CSS qui tourne pendant le chargement -->
+                    <span class="spinner"></span>
+                    Calcul en cours...
+                </span>
+            </button>
         </div>
 
-        <div id="result-container" class="hidden">
-            <h2 id="result-text">--%</h2>
-            <p id="result-message">En attente de l'IA...</p>
+        <!-- ===== ZONE DE RÉSULTAT ===== -->
+        <!--
+            Cette carte est cachée par défaut (classe "hidden") et elle apparaît
+            avec une animation quand l'IA renvoie le résultat.
+            
+            Selon le pourcentage :
+              - > 50% → la carte devient verte (victoire probable)
+              - ≤ 50% → la carte devient rouge (défaite probable)
+            
+            Les classes "victory" et "defeat" sont ajoutées dynamiquement par le JS.
+        -->
+        <div id="result-container" class="result-card hidden">
+            <div class="result-inner">
+                <!-- Le gros pourcentage affiché (ex: "67.34%") -->
+                <h2 id="result-text" class="result-percentage">--%</h2>
+                <!-- Le petit message en dessous qui donne un conseil -->
+                <p id="result-message" class="result-msg">En attente de l'IA...</p>
+                <!-- La barre de progression visuelle qui se remplit selon le pourcentage -->
+                <div class="progress-bar-container">
+                    <div id="progress-bar" class="progress-bar" style="width: 0%;"></div>
+                </div>
+            </div>
         </div>
+
+        <!-- ===== FOOTER ===== -->
+        <!-- Un petit footer discret avec les crédits du projet -->
+        <footer>
+            <p>Projet Data Sciences — Pipeline MLOps de bout en bout</p>
+            <p>Morgan Theleste - Data Scientist Student</p>
+        </footer>
     </div>
 
+    <!-- Mon fichier JavaScript principal (toute la logique est dedans) -->
     <script src="script.js"></script>
 </body>
 </html>

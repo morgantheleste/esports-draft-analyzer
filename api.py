@@ -17,10 +17,18 @@ class MatchupRequest(BaseModel):
     champion: str
     enemy_champion: str
     position: str
-    ally_tanks: int
-    enemy_tanks: int
-    ally_mages: int
-    enemy_mages: int
+    ally_tanks: int = 0
+    enemy_tanks: int = 0
+    ally_mages: int = 0
+    enemy_mages: int = 0
+    ally_assassins: int = 0
+    enemy_assassins: int = 0
+    ally_fighters: int = 0
+    enemy_fighters: int = 0
+    ally_marksmen: int = 0
+    enemy_marksmen: int = 0
+    ally_supports: int = 0
+    enemy_supports: int = 0
 
 @app.post("/predict")
 def predict_matchup(request: MatchupRequest):
@@ -36,10 +44,14 @@ def predict_matchup(request: MatchupRequest):
     if pos_col in input_data.columns: input_data.at[0, pos_col] = 1
 
     # 2. Injection des valeurs numériques
-    if "ally_tanks" in input_data.columns: input_data.at[0, "ally_tanks"] = request.ally_tanks
-    if "enemy_tanks" in input_data.columns: input_data.at[0, "enemy_tanks"] = request.enemy_tanks
-    if "ally_mages" in input_data.columns: input_data.at[0, "ally_mages"] = request.ally_mages
-    if "enemy_mages" in input_data.columns: input_data.at[0, "enemy_mages"] = request.enemy_mages
+    features = [
+        "ally_tanks", "enemy_tanks", "ally_mages", "enemy_mages",
+        "ally_assassins", "enemy_assassins", "ally_fighters", "enemy_fighters",
+        "ally_marksmen", "enemy_marksmen", "ally_supports", "enemy_supports"
+    ]
+    for feature in features:
+        if feature in input_data.columns:
+            input_data.at[0, feature] = getattr(request, feature)
 
     prediction_proba = model.predict_proba(input_data)[0]
     win_chance = prediction_proba[1] * 100
